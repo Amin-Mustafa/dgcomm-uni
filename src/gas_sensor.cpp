@@ -30,7 +30,7 @@ Sensor::Sensor(uint16_t pin, Type gas)
 
         sensor_dev->init();
 
-        sensor_dev->setR0(R0_VALUE / 10);
+        sensor_dev->setR0(R0_VALUE);
     }
 
 Sensor::~Sensor()=default;

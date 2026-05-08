@@ -10,7 +10,7 @@ namespace Gas {
 
 enum class Type {H2, LPG, CO, ALCOHOL, PROPANE, COUNT};
 
-constexpr float THRESHOLD = 150.0f;
+constexpr float ALCOHOL_THRESHOLD = 150.0f;
 
 class Sensor {
 public:
@@ -22,8 +22,8 @@ private:
     std::unique_ptr<MQUnifiedsensor > sensor_dev;
 };
 
-constexpr bool gas_high(const float reading) {
-    return reading > THRESHOLD;
+constexpr bool gas_is_high(const float reading) {
+    return reading > ALCOHOL_THRESHOLD;
 }
 
 }
