@@ -4,7 +4,7 @@
 #include "MQUnifiedsensor.h"
 #include <array>
 
-#define RATIO_MQ2 9.83f
+#define RATIO_MQ3 60.0f
 #define R0_VALUE  10.0f
 #define DEFAULT_R0 10.0f // Fallback if flash memory is empty
 
@@ -15,15 +15,16 @@ struct RegressionCoeff {
 };
 
 static constexpr std::array<RegressionCoeff, static_cast<size_t>(Type::COUNT)> gas_lut = {
-    RegressionCoeff{ 987.99 , -2.162 }, // H2
-    RegressionCoeff{ 574.25 , -2.222 }, // LPG
-    RegressionCoeff{ 36974  , -3.109 }, // CO
-    RegressionCoeff{ 3616.1 , -2.675 }, // ALCOHOL
-    RegressionCoeff{ 658.71 , -2.168 }, // PROPANE
+    RegressionCoeff{ 44771  , -3.245 }, // LPG
+    RegressionCoeff{ 2e31f  , 19.01  }, // CH4
+    RegressionCoeff{ 521853 , -3.821 }, // CO
+    RegressionCoeff{ 0.3934 , -1.504 }, // ALCOHOL
+    RegressionCoeff{ 4.8387 , -2.68  }, // BENZENE
+    RegressionCoeff{ 7585.3 , -2.849 }  // HEXANE
 };
 
 Sensor::Sensor(uint16_t pin, Type gas)
-    :sensor_dev{std::make_unique<MQUnifiedsensor >("ESP-32", 3.3, 12, pin, "MQ2")} {
+    :sensor_dev{std::make_unique<MQUnifiedsensor >("ESP-32", 3.3, 12, pin, "MQ3")} {
         RegressionCoeff coeff = gas_lut[static_cast<size_t>(gas)];
 
         sensor_dev->setRegressionMethod(1);
@@ -47,7 +48,7 @@ float Sensor::read() {
     if (calibrating) return 0.0f; 
     
     sensor_dev->update();
-    return sensor_dev->readSensor();
+    return sensor_dev->readSensor() * 500;  // Convert to PPM
 }
 
 void Sensor::calibrate() {
@@ -59,7 +60,7 @@ void Sensor::calibrate() {
     // Take 10 samples over 5 seconds
     for(int i = 1; i <= 10; i++) {
         sensor_dev->update(); 
-        calcR0 += sensor_dev->calibrate(RATIO_MQ2);
+        calcR0 += sensor_dev->calibrate(RATIO_MQ3);
         Serial.print(".");
         delay(500); // Deliberate delay to get distinct temporal samples
     }
@@ -78,5 +79,6 @@ void Sensor::calibrate() {
     
     calibrating = false;
 }
+
 
 }   // namespace Gas

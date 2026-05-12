@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <DHT.h>
+#include <DHT20.h>
 #include "presence.h"
 #include "gas_sensor.h"
 #include "sensor_fusion.h"
@@ -24,13 +24,11 @@ unsigned long last_reconnect_attempt = 0;
 // --- Validated Hardware Pins ---
 #define GAS_PIN D0       
 #define PRESENCE_PIN D1  
-#define DHT_PIN D2
 #define BUZZER_PIN D3 
 #define LED_GRN D8
 #define LED_YEL D9
 #define LED_RED D10   
 
-#define DHTTYPE DHT22
 #define TEMPERATURE_THRESHOLD	35.0f
 
 #define POLL_DELAY_NORMAL	1000
@@ -45,10 +43,10 @@ void actuate(const SensorFusion::StateTracker& st, bool blink_state);
 void notify_admin(const std::string& msg);
 void handle_network(unsigned long current_time);
 
-DHT dht(DHT_PIN, DHTTYPE);
 Presence::Detector presence_detector(PRESENCE_PIN);
 Gas::Sensor gas_sensor(GAS_PIN, Gas::Type::ALCOHOL);
 SensorFusion::StateTracker sensor_fusion;
+DHT20 dht20;    
 
 void setup() {
 	Serial.begin(115200);
@@ -66,7 +64,8 @@ void setup() {
     WiFi.begin(ssid, password);
     mqtt_client.setServer(mqtt_broker, mqtt_port);
 	
-	dht.begin();
+	Wire.begin();
+    dht20.begin();
 }
 
 unsigned long last_dht_read = 0;
@@ -107,34 +106,34 @@ void loop() {
 void update_sensor_state(SensorFusion::StateTracker& st, unsigned long current_time) {
     using SensorFusion::Sensor;
     
-    // 1. Check Presence
+    // Check Presence
     presence_detector.update();
 	lab_occupied = presence_detector.occupied();
     st.set_sensor(Sensor::PRESENCE, lab_occupied);
 
-    // 2. Check Gas (Capture the raw value!)
+    // Check Gas (Capture the raw value!)
     raw_gas = gas_sensor.read();
-    st.set_sensor(Sensor::GAS, Gas::gas_is_high(raw_gas));
+    st.set_sensor(Sensor::GAS, Gas::is_high(raw_gas));
 
     // Check Temperature & Publish Telemetry (Every 2 seconds)
     if (current_time - last_dht_read >= 2000) {
-        float temp = dht.readTemperature();
-        if (!isnan(temp)) { 
-            raw_temp = temp; // Capture raw temp
+        
+        // The DHT20 requires a read() command before fetching the data
+        int status = dht20.read();
+        
+        // DHT20_OK means the I2C communication was successful
+        if (status == DHT20_OK) { 
+            raw_temp = dht20.getTemperature(); 
             st.set_sensor(Sensor::TEMPERATURE, temp_is_high(raw_temp));
+        } else {
+            Serial.println("Warning: DHT20 Sensor disconnected or read error!");
         }
         last_dht_read = current_time;
 
-        // Publish JSON
+        // Publish JSON Telemetry
         if (mqtt_client.connected()) {
             char payload[100];
-            // Formats a string like: {"temperature": 32.5, "gas_ppm": 12.4}
-            snprintf(payload, sizeof(payload), "{\"temperature\": %.1f, \"gas_ppm\": %.1f, \"presence\": %d}",
-				raw_temp, raw_gas, lab_occupied);
-			
-			Serial.print("Publishing Telemetry: ");
-            Serial.println(payload);
-
+            snprintf(payload, sizeof(payload), "{\"temperature\": %.1f, \"gas_ppm\": %.1f}", raw_temp, raw_gas);
             mqtt_client.publish("lab/telemetry", payload);
         }
     }
@@ -221,7 +220,5 @@ void notify_admin(const std::string& msg) {
     if (mqtt_client.connected()) {
         // Publish to the "lab/alerts" topic
         mqtt_client.publish("lab/alerts", msg.c_str());
-    } else {
-        Serial.println("Network offline. Message logged locally only.");
     }
 }

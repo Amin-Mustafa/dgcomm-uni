@@ -8,9 +8,10 @@ class MQUnifiedsensor ;
 
 namespace Gas {
 
-enum class Type {H2, LPG, CO, ALCOHOL, PROPANE, COUNT};
+enum class Type {LPG, CH4, CO, ALCOHOL, BENZENE, HEXANE, COUNT};
 
-constexpr float ALCOHOL_THRESHOLD = 150.0f;
+constexpr float ALCOHOL_HIGH_TRIGGER = 150.0f; 
+constexpr float ALCOHOL_LOW_TRIGGER = 100.0f;
 
 class Sensor {
 public:
@@ -25,8 +26,16 @@ private:
     bool calibrating = false;
 };
 
-constexpr bool gas_is_high(const float reading) {
-    return reading > ALCOHOL_THRESHOLD;
+inline bool is_high(float current_ppm) {
+    static bool alarm_active = false; 
+
+    if (!alarm_active && current_ppm > ALCOHOL_HIGH_TRIGGER) {
+        alarm_active = true;
+    } 
+    else if (alarm_active && current_ppm < ALCOHOL_LOW_TRIGGER) {
+        alarm_active = false;
+    }
+    return alarm_active;
 }
 
 }
