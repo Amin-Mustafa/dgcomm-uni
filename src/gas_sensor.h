@@ -10,8 +10,8 @@ namespace Gas {
 
 enum class Type {LPG, CH4, CO, ALCOHOL, BENZENE, HEXANE, COUNT};
 
-constexpr float ALCOHOL_HIGH_TRIGGER = 150.0f; 
-constexpr float ALCOHOL_LOW_TRIGGER = 100.0f;
+constexpr float ALCOHOL_HIGH_TRIGGER = 50.0f; 
+constexpr float ALCOHOL_LOW_TRIGGER = 40.0f;
 
 class Sensor {
 public:
