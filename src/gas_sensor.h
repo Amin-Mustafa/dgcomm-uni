@@ -17,9 +17,12 @@ public:
     Sensor(uint16_t pin, Type gas);
     ~Sensor();
     float read();
+    void calibrate();
+    bool is_calibrating() const { return calibrating; }
 
 private:
-    std::unique_ptr<MQUnifiedsensor > sensor_dev;
+    std::unique_ptr<MQUnifiedsensor> sensor_dev;
+    bool calibrating = false;
 };
 
 constexpr bool gas_is_high(const float reading) {
