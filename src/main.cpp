@@ -23,13 +23,13 @@ unsigned long last_reconnect_attempt = 0;
 
 // --- Validated Hardware Pins ---
 #define GAS_PIN D0       
-#define PRESENCE_PIN D1  
+#define PRESENCE_PIN D1
 #define BUZZER_PIN D3 
 #define LED_GRN D8
 #define LED_YEL D9
 #define LED_RED D10   
 
-#define TEMPERATURE_THRESHOLD	35.0f
+#define TEMPERATURE_THRESHOLD	30.0f
 
 #define POLL_DELAY_NORMAL	1000
 #define POLL_DELAY_LONG		10000
@@ -133,7 +133,8 @@ void update_sensor_state(SensorFusion::StateTracker& st, unsigned long current_t
         // Publish JSON Telemetry
         if (mqtt_client.connected()) {
             char payload[100];
-            snprintf(payload, sizeof(payload), "{\"temperature\": %.1f, \"gas_ppm\": %.1f}", raw_temp, raw_gas);
+            snprintf(payload, sizeof(payload), "{\"temperature\": %.1f, \"gas_ppm\": %.1f, \"presence\": %d}",
+				raw_temp, raw_gas, lab_occupied);
             mqtt_client.publish("lab/telemetry", payload);
         }
     }
