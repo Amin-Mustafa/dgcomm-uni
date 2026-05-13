@@ -62,7 +62,10 @@
       "top": -157.6,
       "left": 50.9,
       "rotate": 90,
-      "attrs": {}
+      "attrs": {
+        "minPpm": "0",
+        "maxPpm": "0.2" 
+      }
     },
     { "type": "wokwi-dht22", "id": "dht1", "top": -191.7, "left": 253.8, "attrs": {} }
   ],

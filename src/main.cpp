@@ -9,8 +9,8 @@
 #include <string>
 
 // --- Configuration ---
-const char* ssid = "Galaxy_A16_6FB3";
-const char* password = "12345678";
+const char* ssid = "Wokwi-GUEST";
+const char* password = "";
 const char* mqtt_broker = "8fa6532b48c4440fa03edd9ddfd662f6.s1.eu.hivemq.cloud";
 const int mqtt_port = 8883;
 const char* mqtt_username = "Amin-Mustafa";
